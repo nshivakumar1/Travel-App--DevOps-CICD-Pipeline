@@ -1,6 +1,58 @@
 version: '3.8'
 
 services:
+  # Application
+  travel-app:
+    build: .
+    ports:
+      - "80:80"
+    depends_on:
+      - prometheus
+    networks:
+      - devsecops-network
+
+  # CI/CD
+  jenkins:
+    image: jenkins/jenkins:lts
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8080:8080"
+    networks:
+      - devsecops-network
+
+  # Code Quality
+  sonarqube:
+    image: sonarqube:community
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://sonarqube-db:5432/sonar
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=sonar
+    depends_on:
+      - sonarqube-db
+    networks:
+      - devsecops-network
+
+  sonarqube-db:
+    image: postgres:13
+    volumes:
+      - postgresql:/var/lib/postgresql
+      - postgresql_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonar
+    networks:
+      - devsecops-network
+
+  # Monitoring
   prometheus:
     image: prom/prometheus:latest
     volumes:
@@ -13,20 +65,22 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
     ports:
       - "9090:9090"
-    restart: unless-stopped
+    networks:
+      - devsecops-network
 
   grafana:
     image: grafana/grafana:latest
     volumes:
       - grafana_data:/var/lib/grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
       - GF_USERS_ALLOW_SIGN_UP=false
     ports:
       - "3000:3000"
-    restart: unless-stopped
     depends_on:
       - prometheus
+    networks:
+      - devsecops-network
 
   node-exporter:
     image: prom/node-exporter:latest
@@ -40,7 +94,8 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     ports:
       - "9100:9100"
-    restart: unless-stopped
+    networks:
+      - devsecops-network
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -51,9 +106,20 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
     ports:
-      - "8080:8080"
-    restart: unless-stopped
+      - "8081:8080"
+    networks:
+      - devsecops-network
+
+networks:
+  devsecops-network:
+    driver: bridge
 
 volumes:
+  jenkins_home:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+  postgresql:
+  postgresql_data:
   prometheus_data:
   grafana_data: 

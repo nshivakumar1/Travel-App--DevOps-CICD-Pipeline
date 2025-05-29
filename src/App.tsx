@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Sun, Moon, MapPin, Star, Users, Wifi, Car, Coffee, Bath } from 'lucide-react';
 
 interface Stay {
