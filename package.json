@@ -14,7 +14,9 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.0",
+    "@types/babel__traverse": "^7.20.7",
+    "@types/node": "^22.15.24",
+    "@types/react": "^18.3.23",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",

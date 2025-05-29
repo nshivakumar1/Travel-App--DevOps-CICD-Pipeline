@@ -1,0 +1,102 @@
+groups:
+  - name: travel-app
+    rules:
+      # High CPU Usage Alert
+      - alert: HighCPUUsage
+        expr: avg(rate(container_cpu_usage_seconds_total{container!=""}[5m])) by (container) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High CPU usage detected
+          description: Container {{ $labels.container }} has high CPU usage ({{ $value }})
+
+      # High Memory Usage Alert
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes{container!=""} / container_spec_memory_limit_bytes{container!=""} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High memory usage detected
+          description: Container {{ $labels.container }} is using {{ $value | humanizePercentage }} of its memory limit
+
+      # Pod Restart Alert
+      - alert: PodRestarting
+        expr: increase(kube_pod_container_status_restarts_total[1h]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Pod is restarting
+          description: Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last hour
+
+      # High Latency Alert
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High latency detected
+          description: 95th percentile latency is {{ $value }}s
+
+      # Error Rate Alert
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: High error rate detected
+          description: Error rate is {{ $value | humanizePercentage }}
+
+      # Database Connection Alert
+      - alert: DatabaseConnectionIssues
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: Database connection issues
+          description: Cannot connect to the database
+
+      # Disk Space Alert
+      - alert: LowDiskSpace
+        expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Low disk space
+          description: Node {{ $labels.node }} has only {{ $value | humanizePercentage }} free disk space
+
+      # API Endpoint Down Alert
+      - alert: APIEndpointDown
+        expr: up{job="travel-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: API endpoint is down
+          description: The travel app API endpoint is not responding
+
+      # High Request Rate Alert
+      - alert: HighRequestRate
+        expr: sum(rate(http_requests_total[5m])) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: High request rate detected
+          description: Request rate is {{ $value }} requests per second
+
+      # SSL Certificate Expiry Alert
+      - alert: SSLCertExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: SSL certificate expiring soon
+          description: SSL certificate for {{ $labels.instance }} will expire in {{ $value | humanizeDuration }} 
