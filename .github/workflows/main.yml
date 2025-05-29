@@ -12,10 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Update Node.js base image
+        run: docker pull node:18.17.0
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'node:18'
+          image-ref: 'node:18.17.0'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
