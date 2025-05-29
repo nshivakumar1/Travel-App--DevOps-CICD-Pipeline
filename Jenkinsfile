@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:18'
+            args '-u root:root' // allows npm to install globally if needed
+        }
+    }
     
     environment {
         DOCKER_IMAGE = 'travel-app'
